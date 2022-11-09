@@ -45,7 +45,7 @@ app.listen(PORT, () => {
 //    console.log(rows);
 //   });
 
-// GET a single candidate
+// GET from candidates: Specific candidate using query
 // db.query(`SELECT * FROM candidates WHERE id = 1`, (err, row) => {
 //    if (err) {
 //      console.log(err);
@@ -53,7 +53,7 @@ app.listen(PORT, () => {
 //     console.log(row);
 //  });
 
-// DELETE a candidate
+// DELETE from candidates: Specific candidate using query
 // db.query(`DELETE FROM candidates WHERE id = ?`, 1, (err, result) => {
 //    if (err) {
 //      console.log(err);
@@ -61,7 +61,7 @@ app.listen(PORT, () => {
 //    console.log(result);
 //  });
 
-// CREATE a candidate
+// CREATE into candidate
 // const sql = 'INSERT INTO candidates (id, first_name, last_name, industry_connected) VALUES (?,?,?,?)';
 // const params = [1, 'Ronald', 'Firbank', 1];
 
@@ -73,7 +73,7 @@ app.listen(PORT, () => {
 // });
 
 
-// POST a candidate
+// POST into candidate
 // app.post('/api/candidate', ({ body }, res) => {
 //   const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
 //   if (errors) {
@@ -96,8 +96,8 @@ app.listen(PORT, () => {
 // });
 // });
 
-/*
-GET all candidates
+
+// GET from candidates: All candidates
 app.get('/api/candidates', (req, res) => { // Set up route
    const sql = `SELECT * FROM candidates`;
 
@@ -110,40 +110,41 @@ db.query(sql, (err, rows) => { // Pass in two parameters: sql, and an arrow func
         message: 'success', // Object with two properties: a message with a value of 'success', and a data property with a value of 'rows.'
         data: rows
     });
+  });
 });
+
+
+// GET from candidates: Specific candidate using param
+app.get('/api/candidate/:id', (req,res) => {
+    const sql = 'SELECT * FROM candidates WHERE id = ?';
+    const params = [req.params.id]; //  Endpoint has a route parameter that will hold the value of the id to specify which candidate we'll select from the database.
+
+db.query(sql, params, (err, rows) => { 
+    if (err) {
+        res.status(400).json({error: err.message});
+        return;
+    }
+    res.json({
+        message: 'success',
+        data: rows
+    });
+ });
 });
-*/
 
-// GET row for specific id
-// app.get('/api/candidate/:id', (req,res) => {
-//     const sql = 'SELECT * FROM candidates WHERE id = ?';
-//     const params = [req.params.id]; //  Endpoint has a route parameter that will hold the value of the id to specify which candidate we'll select from the database.
 
-// db.query(sql, params, (err, rows) => { 
-//     if (err) {
-//         res.status(400).json({error: err.message});
-//         return;
-//     }
-//     res.json({
-//         message: 'success',
-//         data: rows
-//     });
-// });
-// });
-
-// GET party_name of candidate
+// GET from candidates joined with parties: Specific candidate using param
 // app.get('/api/candidate/:id', (req,res) => {
 //   const sql = 'SELECT candidates.*, parties.name AS party_name FROM candidates LEFT JOIN parties on candidates.party_id = parties.id WHERE candidates.id = ?';
 //   const params = [req.params.id]; 
 
 // db.query(sql, params, (err, rows) => { 
 //   if (err) {
-//       res.status(400).json({error: err.message});
-//       return;
+//      res.status(400).json({error: err.message});
+//      return;
 //   }
 //   res.json({
-//       message: 'success',
-//       data: rows
+//      message: 'success',
+//      data: rows
 //   });
 // });
 // });
@@ -152,6 +153,95 @@ db.query(sql, (err, rows) => { // Pass in two parameters: sql, and an arrow func
 //  * This is a temp function
 //  */
 // function temp() { }
+
+
+// GET from parties: All parties
+// app.get('/api/parties', (req,res) => {
+//   const sql = 'SELECT * FROM parties';
+//   db.query(sql, (err,rows) => {
+//     if (err) {
+//         res.status(500).json({error: err.message});
+//         return;
+//       }
+//         res.json({
+//           message: 'success',
+//           data: rows
+//       });
+//   });
+// });
+
+
+// GET from parties: Specific party using param
+app.get('/api/party/:id', (req, res) => {
+  const sql = `SELECT * FROM parties WHERE id = ?`;
+  const params = [req.params.id];
+  db.query(sql, params, (err, row) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: row
+    });
+  });
+});
+
+// DELETE from parties: Specific party using param
+app.delete('/api/party/:id', (req, res) => {
+  const sql = `DELETE FROM parties WHERE id = ?`;
+  const params = [req.params.id];
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: res.message });
+      // checks if anything was deleted
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Party not found'
+      });
+    } else {
+      res.json({
+        message: 'deleted',
+        changes: result.affectedRows,
+        id: req.params.id
+      });
+    }
+  });
+});
+
+
+// UPDATE candidates: Update a candidate's party
+app.put('/api/candidate/:id', (req, res) => {
+  const errors = inputCheck(req.body, 'party_id');
+
+if (errors) {
+  res.status(400).json({ error: errors });
+  return;
+}
+  const sql = 'UPDATE candidates SET party_id = ? WHERE id = ?';
+  const params = [req.body.party_id, req.params.id];  // The affected row's id should always be part of the route (e.g., /api/candidate/2) while the actual fields we're updating should be part of the body.
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      // check if a record was found
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Candidate not found'
+      });
+    } else {
+      res.json({
+        message: 'success',
+        data: req.body,
+        changes: result.affectedRows
+      });
+    }
+  });
+});
+
+
+
+
+
 
 
 
