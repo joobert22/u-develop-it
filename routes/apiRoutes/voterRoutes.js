@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../../db/connection');
 const inputCheck = require('../../utils/inputCheck');
 
+
 // GET from voters: All voters
 router.get('/voters', (req, res) => {
     const sql = 'SELECT * FROM voters ORDER BY last_name';
@@ -17,6 +18,7 @@ db.query(sql, (err, rows) => {
     });
     });
 });
+
 
 // GET from voters: Specific voter using param
 router.get('/voter/:id', (req, res) => {
